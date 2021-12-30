@@ -70,7 +70,7 @@ class TiktokVideo {
                     })
                     .catch(async (error) => {
                         console.log("Error Getting Video From Url !");
-                     });
+                    });
             }
             else {
                 console.log(id + " Already Uploaded !")
@@ -85,7 +85,7 @@ class TiktokVideo {
         let username = this.username;
         let title = this.title;
         let d = new Date(Number(this.date) * 1000);
-        let date = d.toISOString().split('T')[0]+' '+d.toTimeString().split(' ')[0];
+        let date = d.toISOString().split('T')[0] + ' ' + d.toTimeString().split(' ')[0];
         await connection.query(`SELECT count(*) count FROM ${process.env.DB_TABLE_VIDEOS} WHERE video_id = '${id}'`,
             async (error, res) => {
                 if (error) {
@@ -101,7 +101,7 @@ class TiktokVideo {
                         await connection.query(`INSERT INTO ${process.env.DB_TABLE_VIDEOS} (pseudo, video_id, title, date) VALUES ('${username}', '${id}', '${title}', '${date}')`,
                             function (error) {
                                 if (error) {
-                                    console.error(error.sqlMessage);
+                                    console.error("Error While Storing The Video", error.sqlMessage);
                                 }
                                 else {
                                     this.uploaded = true
@@ -112,8 +112,20 @@ class TiktokVideo {
                         );
                     }
                     else {
-                        console.log(id + " ALready Stored !");
-                        connection.end()
+                        await connection.query(`UPDATE ${process.env.DB_TABLE_VIDEOS} SET date = '${date}' WHERE video_id = '${id}'`,
+                            function (error) {
+                                if (error) {
+                                    console.error("Error While Updating The Date ! ", error.sqlMessage);
+                                }
+                                else {
+                                    this.uploaded = true
+                                    console.log(id + " Date Updated")
+                                }
+                                connection.end()
+                            }
+                        );
+                        // console.log(id + " ALready Stored !");
+                        // connection.end()
                     }
                 }
             }
@@ -212,7 +224,7 @@ class VieosDumper {
             );
             setTimeout(async () => {
                 await this_ref.resume_dumping(Number(response.data.data.max_cursor));
-            }, 15000);
+            }, 60000);
             return true;
         }
         else {
@@ -256,7 +268,7 @@ class VieosDumper {
     }
 
     async setCursor(error, result) {
-        if(error) {
+        if (error) {
             console.error(error.sqlMessage);
         }
         await result.forEach(async (row) => {
@@ -320,7 +332,7 @@ let main = new Main()
 
 
 
-cron.schedule('*/5 * * * *', () => {
+cron.schedule('*/15 * * * *', () => {
     main.start(50);
 });
 
